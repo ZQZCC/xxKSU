@@ -49,7 +49,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             vcsInfo.include = false
-            if (isPrBuild) applicationIdSuffix = ".dev"
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             externalNativeBuild {
                 cmake {
@@ -104,7 +103,8 @@ android {
     }
 
     androidResources {
-        generateLocaleConfig = true
+        generateLocaleConfig = false
+        localeFilters += listOf("zh-rCN")
     }
     compileSdk {
         version =
@@ -116,6 +116,7 @@ android {
     ndkVersion = androidCompileNdkVersion
 
     defaultConfig {
+        applicationId = "ka.super"
         minSdk = androidMinSdkVersion
         targetSdk = androidTargetSdkVersion
         versionCode = managerVersionCode
@@ -132,7 +133,7 @@ android {
         }
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -177,6 +178,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigationevent.compose)
 
     implementation(libs.com.github.topjohnwu.libsu.core)
@@ -198,12 +200,6 @@ dependencies {
     implementation(libs.lsposed.cxx)
 
     implementation(libs.hiddenapibypass)
-
-    implementation(libs.miuix.ui)
-    implementation(libs.miuix.icons)
-    implementation(libs.miuix.navigation3.ui)
-    implementation(libs.miuix.preference)
-    implementation(libs.miuix.blur)
 
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)

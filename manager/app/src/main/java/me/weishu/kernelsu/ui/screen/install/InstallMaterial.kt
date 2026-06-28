@@ -1,7 +1,11 @@
 package me.weishu.kernelsu.ui.screen.install
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
@@ -23,12 +28,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -38,15 +46,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
-import me.weishu.kernelsu.ui.component.material.ExpressiveScaffold
 import me.weishu.kernelsu.ui.component.material.SegmentedCheckboxItem
 import me.weishu.kernelsu.ui.component.material.SegmentedColumn
 import me.weishu.kernelsu.ui.component.material.SegmentedDropdownItem
 import me.weishu.kernelsu.ui.component.material.SegmentedListItem
 import me.weishu.kernelsu.ui.component.material.SegmentedRadioItem
 import me.weishu.kernelsu.ui.component.material.SnackBarHost
-import me.weishu.kernelsu.ui.component.material.TopBarBackButton
-import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
 import me.weishu.kernelsu.ui.util.LkmSelection
 
 /**
@@ -61,7 +66,11 @@ internal fun InstallScreenMaterial(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
-    ExpressiveScaffold(
+    LaunchedEffect(Unit) {
+        scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffsetLimit
+    }
+
+    Scaffold(
         topBar = {
             TopBar(
                 onBack = actions.onBack,
@@ -76,8 +85,7 @@ internal fun InstallScreenMaterial(
                 .padding(innerPadding)
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(13.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             SelectInstallMethod(
                 state = uiState,
@@ -86,7 +94,7 @@ internal fun InstallScreenMaterial(
             )
 
             SegmentedColumn(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 content = buildList {
                     if (uiState.displayPartitions.isNotEmpty()) add {
                         SegmentedDropdownItem(
@@ -136,46 +144,60 @@ internal fun InstallScreenMaterial(
             )
 
             SegmentedColumn(
-                modifier = Modifier.padding(horizontal = 16.dp),
-            ) {
-                item {
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                visibleLen = if (uiState.advancedOptionsShown) 0 else 1,
+                content = buildList {
                     val rotationState by animateFloatAsState(
                         targetValue = if (uiState.advancedOptionsShown) 180f else 0f,
                         label = "RotationAnimation"
                     )
-                    SegmentedListItem(
-                        headlineContent = { Text(stringResource(R.string.advanced_options)) },
-                        trailingContent = {
-                            Icon(
-                                imageVector = Icons.Filled.ExpandMore,
-                                contentDescription = stringResource(R.string.expand),
-                                modifier = Modifier.graphicsLayer { rotationZ = rotationState }
+                    add {
+                        SegmentedListItem(
+                            headlineContent = { Text(stringResource(R.string.advanced_options)) },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.Filled.ExpandMore,
+                                    contentDescription = stringResource(R.string.expand),
+                                    modifier = Modifier.graphicsLayer { rotationZ = rotationState }
+                                )
+                            },
+                            onClick = actions.onAdvancedOptionsClicked
+                        )
+                    }
+                    add {
+                        AnimatedVisibility(
+                            uiState.advancedOptionsShown,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            SegmentedCheckboxItem(
+                                title = stringResource(id = R.string.allow_shell),
+                                summary = stringResource(id = R.string.allow_shell_summary),
+                                checked = uiState.allowShell,
+                                onCheckedChange = actions.onSelectAllowShell,
                             )
-                        },
-                        onClick = actions.onAdvancedOptionsClicked
-                    )
+                        }
+                    }
+                    add {
+                        AnimatedVisibility(
+                            uiState.advancedOptionsShown,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            SegmentedCheckboxItem(
+                                title = stringResource(id = R.string.enable_adb),
+                                summary = stringResource(id = R.string.enable_adb_summary),
+                                checked = uiState.enableAdb,
+                                onCheckedChange = actions.onSelectEnableAdb,
+                            )
+                        }
+                    }
                 }
-                item(visible = uiState.advancedOptionsShown) {
-                    SegmentedCheckboxItem(
-                        title = stringResource(id = R.string.allow_shell),
-                        summary = stringResource(id = R.string.allow_shell_summary),
-                        checked = uiState.allowShell,
-                        onCheckedChange = actions.onSelectAllowShell,
-                    )
-                }
-                item(visible = uiState.advancedOptionsShown) {
-                    SegmentedCheckboxItem(
-                        title = stringResource(id = R.string.enable_adb),
-                        summary = stringResource(id = R.string.enable_adb_summary),
-                        checked = uiState.enableAdb,
-                        onCheckedChange = actions.onSelectEnableAdb,
-                    )
-                }
-            }
+            )
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 enabled = uiState.installMethod != null,
                 onClick = actions.onNext
             ) { Text(stringResource(R.string.install_next)) }
@@ -208,7 +230,7 @@ private fun SelectInstallMethod(
 
     key(state.installMethodOptions.size) {
         SegmentedColumn(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             content = state.installMethodOptions.map { option ->
                 {
                     SegmentedRadioItem(
@@ -231,9 +253,14 @@ private fun TopBar(
     LargeFlexibleTopAppBar(
         title = { Text(stringResource(R.string.install)) },
         navigationIcon = {
-            TopBarBackButton(onClick = onBack)
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
         },
-        colors = expressiveTopAppBarColors(),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surface
+        ),
         windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         scrollBehavior = scrollBehavior
     )

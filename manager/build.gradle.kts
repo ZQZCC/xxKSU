@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.compose.compiler) apply false
 }
 
-val androidMinSdkVersion by extra(25)
+val androidMinSdkVersion by extra(26)
 val androidTargetSdkVersion by extra(37)
 val androidCompileSdkVersion by extra(37)
 val androidCompileSdkVersionMinor by extra(0)
@@ -26,10 +26,9 @@ fun getGitDescribe(): String {
 }
 
 fun getVersionCode(): Int {
-    val commitCount = getGitCommitCount()
-    return 30000 + commitCount - 92
+    return 32525
 }
 
 fun getVersionName(): String {
-    return getGitDescribe()
+    return "v3.2.5"
 }

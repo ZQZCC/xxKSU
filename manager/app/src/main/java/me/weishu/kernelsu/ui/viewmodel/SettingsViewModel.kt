@@ -16,6 +16,7 @@ import me.weishu.kernelsu.R
 import me.weishu.kernelsu.data.repository.SettingsRepository
 import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
 import me.weishu.kernelsu.ksuApp
+import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.screen.settings.SettingsUiState
 import me.weishu.kernelsu.ui.theme.ColorMode
 
@@ -32,15 +33,10 @@ class SettingsViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            val checkUpdate = repo.checkUpdate
             val checkModuleUpdate = repo.checkModuleUpdate
             val themeMode = repo.themeMode
-            val miuixMonet = repo.miuixMonet
             val keyColor = repo.keyColor
             val enablePredictiveBack = repo.enablePredictiveBack
-            val enableBlur = repo.enableBlur
-            val enableFloatingBottomBar = repo.enableFloatingBottomBar
-            val enableFloatingBottomBarBlur = repo.enableFloatingBottomBarBlur
             val pageScale = repo.pageScale
             val enableWebDebugging = repo.enableWebDebugging
             val colorStyle = repo.colorStyle
@@ -63,22 +59,17 @@ class SettingsViewModel(
             val adbRootStatus = repo.getAdbRootStatus()
             val isAdbRootEnabled = repo.getAdbRootPersistValue() == 1L
             val isDefaultUmountModules = repo.isDefaultUmountModules()
-            val uiMode = repo.uiMode
+            val uiMode = UiMode.DEFAULT_VALUE
             val autoJailbreak = repo.autoJailbreak
             val isLateLoadMode = Natives.isLateLoadMode
 
             _uiState.update {
                 it.copy(
                     uiMode = uiMode,
-                    checkUpdate = checkUpdate,
                     checkModuleUpdate = checkModuleUpdate,
                     themeMode = themeMode,
-                    miuixMonet = miuixMonet,
                     keyColor = keyColor,
                     enablePredictiveBack = enablePredictiveBack,
-                    enableBlur = enableBlur,
-                    enableFloatingBottomBar = enableFloatingBottomBar,
-                    enableFloatingBottomBarBlur = enableFloatingBottomBarBlur,
                     pageScale = pageScale,
                     enableWebDebugging = enableWebDebugging,
                     colorStyle = colorStyle,
@@ -103,73 +94,19 @@ class SettingsViewModel(
         }
     }
 
-    fun setCheckUpdate(enabled: Boolean) {
-        repo.checkUpdate = enabled
-        _uiState.update { it.copy(checkUpdate = enabled) }
-    }
-
-    fun setUiMode(mode: String) {
-        val oldMode = repo.uiMode
-        val currentThemeMode = repo.themeMode
-
-        val newThemeMode = when (oldMode) {
-            "material" if mode == "miuix" -> {
-                val colorMode = ColorMode.fromValue(currentThemeMode)
-                val baseMode = if (colorMode == ColorMode.DARK_AMOLED) 2 else currentThemeMode
-                if (repo.miuixMonet && !colorMode.isMonet) {
-                    ColorMode.fromValue(baseMode).toMonetMode()
-                } else if (!repo.miuixMonet && colorMode.isMonet) {
-                    ColorMode.fromValue(baseMode).toNonMonetMode()
-                } else baseMode
-            }
-
-            "miuix" if mode == "material" -> {
-                val colorMode = ColorMode.fromValue(currentThemeMode)
-                if (colorMode.isMonet) {
-                    colorMode.toNonMonetMode()
-                } else currentThemeMode
-            }
-
-            else -> currentThemeMode
-        }
-
-        repo.uiMode = mode
-        repo.themeMode = newThemeMode
-        _uiState.update { it.copy(uiMode = mode, themeMode = newThemeMode) }
-    }
-
     fun setCheckModuleUpdate(enabled: Boolean) {
         repo.checkModuleUpdate = enabled
         _uiState.update { it.copy(checkModuleUpdate = enabled) }
     }
 
     fun setThemeMode(mode: Int) {
-        val currentUiMode = repo.uiMode
-        val effectiveMode = if (currentUiMode == "miuix" && _uiState.value.miuixMonet) {
-            mode + 3
-        } else {
-            mode
-        }
-        repo.themeMode = effectiveMode
-        _uiState.update { it.copy(themeMode = effectiveMode) }
+        repo.themeMode = mode
+        _uiState.update { it.copy(themeMode = mode) }
     }
 
     fun setColorMode(mode: ColorMode) {
         repo.themeMode = mode.value
         _uiState.update { it.copy(themeMode = mode.value) }
-    }
-
-    fun setMiuixMonet(enabled: Boolean) {
-        val currentThemeMode = repo.themeMode
-        val colorMode = ColorMode.fromValue(currentThemeMode)
-        val newThemeMode = if (enabled) {
-            if (!colorMode.isMonet) colorMode.toMonetMode() else currentThemeMode
-        } else {
-            if (colorMode.isMonet) colorMode.toNonMonetMode() else currentThemeMode
-        }
-        repo.miuixMonet = enabled
-        repo.themeMode = newThemeMode
-        _uiState.update { it.copy(miuixMonet = enabled, themeMode = newThemeMode) }
     }
 
     fun setKeyColor(color: Int) {
@@ -190,21 +127,6 @@ class SettingsViewModel(
     fun setEnablePredictiveBack(enabled: Boolean) {
         repo.enablePredictiveBack = enabled
         _uiState.update { it.copy(enablePredictiveBack = enabled) }
-    }
-
-    fun setEnableBlur(enabled: Boolean) {
-        repo.enableBlur = enabled
-        _uiState.update { it.copy(enableBlur = enabled) }
-    }
-
-    fun setEnableFloatingBottomBar(enabled: Boolean) {
-        repo.enableFloatingBottomBar = enabled
-        _uiState.update { it.copy(enableFloatingBottomBar = enabled) }
-    }
-
-    fun setEnableFloatingBottomBarBlur(enabled: Boolean) {
-        repo.enableFloatingBottomBarBlur = enabled
-        _uiState.update { it.copy(enableFloatingBottomBarBlur = enabled) }
     }
 
     fun setPageScale(scale: Float) {
