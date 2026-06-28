@@ -11,26 +11,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import me.weishu.kernelsu.ui.LocalUiMode
-import me.weishu.kernelsu.ui.UiMode
-import top.yukonga.miuix.kmp.blur.Backdrop
-import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import kotlin.math.abs
 
 class MainPagerState(
     val pagerState: PagerState,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
+    initialPage: Int = pagerState.currentPage,
 ) {
-    var selectedPage by mutableIntStateOf(pagerState.currentPage)
+    var selectedPage by mutableIntStateOf(initialPage)
         private set
 
     var isNavigating by mutableStateOf(false)
         private set
+
+    var usePager by mutableStateOf(true)
 
     private var navJob: Job? = null
 
@@ -40,6 +38,9 @@ class MainPagerState(
         navJob?.cancel()
 
         selectedPage = targetIndex
+
+        if (!usePager) return
+
         isNavigating = true
 
         val distance = abs(targetIndex - pagerState.currentPage).coerceAtLeast(2)
@@ -68,6 +69,7 @@ class MainPagerState(
     }
 
     fun syncPage() {
+        if (!usePager) return
         if (!isNavigating && selectedPage != pagerState.currentPage) {
             selectedPage = pagerState.currentPage
         }
@@ -77,32 +79,20 @@ class MainPagerState(
 @Composable
 fun rememberMainPagerState(
     pagerState: PagerState,
-    coroutineScope: CoroutineScope = rememberCoroutineScope()
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    initialPage: Int = pagerState.currentPage,
 ): MainPagerState {
     return remember(pagerState, coroutineScope) {
-        MainPagerState(pagerState, coroutineScope)
+        MainPagerState(pagerState, coroutineScope, initialPage)
     }
 }
 
 @Composable
-fun BottomBar(
-    blurBackdrop: LayerBackdrop?,
-    backdrop: Backdrop,
-    modifier: Modifier = Modifier,
-) {
-    when (LocalUiMode.current) {
-        UiMode.Miuix -> BottomBarMiuix(blurBackdrop, backdrop, modifier)
-        UiMode.Material -> BottomBarMaterial()
-    }
+fun BottomBar() {
+    BottomBarMaterial()
 }
 
 @Composable
-fun SideRail(
-    blurBackdrop: LayerBackdrop?,
-    modifier: Modifier = Modifier,
-) {
-    when (LocalUiMode.current) {
-        UiMode.Miuix -> NavigationRailMiuix(blurBackdrop, modifier)
-        UiMode.Material -> NavigationRailMaterial(modifier)
-    }
+fun SideRail() {
+    NavigationRailMaterial()
 }

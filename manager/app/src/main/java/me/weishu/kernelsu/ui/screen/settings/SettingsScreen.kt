@@ -6,8 +6,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import me.weishu.kernelsu.ui.LocalUiMode
-import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.navigation3.Navigator
 import me.weishu.kernelsu.ui.navigation3.Route
 import me.weishu.kernelsu.ui.viewmodel.SettingsViewModel
@@ -26,12 +24,8 @@ fun SettingPager(
     }
 
     val actions = SettingsScreenActions(
-        onSetCheckUpdate = viewModel::setCheckUpdate,
         onSetCheckModuleUpdate = viewModel::setCheckModuleUpdate,
         onOpenTheme = { navigator.push(Route.ColorPalette) },
-        onSetUiModeIndex = { index ->
-            viewModel.setUiMode(if (index == 0) UiMode.Miuix.value else UiMode.Material.value)
-        },
         onOpenProfileTemplate = { navigator.push(Route.AppProfileTemplate) },
         onSetSuCompatMode = viewModel::setSuCompatMode,
         onSetKernelUmountEnabled = viewModel::setKernelUmountEnabled,
@@ -41,11 +35,7 @@ fun SettingPager(
         onSetDefaultUmountModules = viewModel::setDefaultUmountModules,
         onSetEnableWebDebugging = viewModel::setEnableWebDebugging,
         onSetAutoJailbreak = viewModel::setAutoJailbreak,
-        onOpenAbout = { navigator.push(Route.About) },
     )
 
-    when (LocalUiMode.current) {
-        UiMode.Miuix -> SettingPagerMiuix(uiState, actions, bottomInnerPadding)
-        UiMode.Material -> SettingPagerMaterial(uiState, actions, bottomInnerPadding)
-    }
+    SettingPagerMaterial(uiState, actions, bottomInnerPadding)
 }

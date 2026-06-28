@@ -1,7 +1,7 @@
 package me.weishu.kernelsu.ui.webui
 
-import android.os.Build
 import android.annotation.SuppressLint
+import android.os.Build
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.WindowManager
@@ -30,7 +30,6 @@ import me.weishu.kernelsu.ui.LocalUiMode
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.theme.KernelSUTheme
 import me.weishu.kernelsu.ui.theme.ThemeController
-import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 
 @SuppressLint("SetJavaScriptEnabled")
 class WebUIActivity : ComponentActivity() {
@@ -116,25 +115,12 @@ private fun MainContent(activity: ComponentActivity, onFinish: () -> Unit) {
 
 @Composable
 private fun LoadingContent() {
-    when (LocalUiMode.current) {
-        UiMode.Miuix -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                InfiniteProgressIndicator()
-            }
-        }
-
-        UiMode.Material -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.material3.LoadingIndicator()
-            }
-        }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.LoadingIndicator()
     }
 }

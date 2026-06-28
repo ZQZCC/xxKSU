@@ -51,36 +51,10 @@ data class AppSettings(
     val colorSpec: ColorSpec.SpecVersion,
 )
 
-val PaletteStyle.supportsSpec2025: Boolean
-    get() = this == PaletteStyle.TonalSpot ||
-            this == PaletteStyle.Neutral ||
-            this == PaletteStyle.Vibrant ||
-            this == PaletteStyle.Expressive
-
-fun ColorSpec.SpecVersion.effectiveFor(style: PaletteStyle): ColorSpec.SpecVersion =
-    if (this == ColorSpec.SpecVersion.SPEC_2025 && !style.supportsSpec2025) {
-        ColorSpec.SpecVersion.SPEC_2021
-    } else {
-        this
-    }
-
 object ThemeController {
     fun getAppSettings(context: Context): AppSettings {
         val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val uiMode = prefs.getString("ui_mode", UiMode.DEFAULT_VALUE) ?: UiMode.DEFAULT_VALUE
-        var colorModeValue = prefs.getInt("color_mode", ColorMode.SYSTEM.value)
-
-        if (uiMode == "miuix") {
-            val miuixMonet = prefs.getBoolean("miuix_monet", false)
-            val colorMode = ColorMode.fromValue(colorModeValue)
-            colorModeValue = if (!miuixMonet && colorMode.isMonet) {
-                colorMode.toNonMonetMode()
-            } else if (miuixMonet && !colorMode.isMonet) {
-                colorMode.toMonetMode()
-            } else {
-                colorModeValue
-            }
-        }
+        val colorModeValue = prefs.getInt("color_mode", ColorMode.SYSTEM.value)
 
         val colorMode = ColorMode.fromValue(colorModeValue)
         val keyColor = prefs.getInt("key_color", 0)
@@ -90,11 +64,11 @@ object ThemeController {
         } catch (_: Exception) {
             PaletteStyle.TonalSpot
         }
-        val colorSpecStr = prefs.getString("color_spec", ColorSpec.SpecVersion.SPEC_2025.name)
+        val colorSpecStr = prefs.getString("color_spec", ColorSpec.SpecVersion.Default.name)
         val colorSpec = try {
             ColorSpec.SpecVersion.valueOf(colorSpecStr!!)
         } catch (_: Exception) {
-            ColorSpec.SpecVersion.SPEC_2025
+            ColorSpec.SpecVersion.Default
         }
 
         return AppSettings(colorMode, keyColor, paletteStyle, colorSpec)
@@ -110,17 +84,10 @@ fun KernelSUTheme(
     val context = LocalContext.current
     val currentAppSettings = appSettings ?: ThemeController.getAppSettings(context)
 
-    when (uiMode) {
-        UiMode.Miuix -> MiuixKernelSUTheme(
-            appSettings = currentAppSettings,
-            content = content
-        )
-
-        UiMode.Material -> MaterialKernelSUTheme(
-            appSettings = currentAppSettings,
-            content = content
-        )
-    }
+    MaterialKernelSUTheme(
+        appSettings = currentAppSettings,
+        content = content
+    )
 }
 
 @Composable
@@ -133,11 +100,4 @@ fun isInDarkTheme(): Boolean {
     }
 }
 
-
 val LocalColorMode = staticCompositionLocalOf { 0 }
-
-val LocalEnableBlur = staticCompositionLocalOf { false }
-
-val LocalEnableFloatingBottomBar = staticCompositionLocalOf { false }
-
-val LocalEnableFloatingBottomBarBlur = staticCompositionLocalOf { false }

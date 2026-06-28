@@ -1,7 +1,5 @@
 package me.weishu.kernelsu.ui.viewmodel
 
-import android.content.Context
-import android.os.Build
 import android.system.Os
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -67,8 +65,7 @@ class HomeViewModel : ViewModel() {
             isRootAvailable = isRootAvailable,
             isSafeMode = Natives.isSafeMode,
             isLateLoadMode = Natives.isLateLoadMode,
-            checkUpdateEnabled = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
-                .getBoolean("check_update", true),
+            checkUpdateEnabled = false,
             latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,
             superuserCount = getSuperuserCount(),
@@ -77,7 +74,6 @@ class HomeViewModel : ViewModel() {
                 kernelVersion = Os.uname().release,
                 managerVersion = "${managerVersion.versionName} (${managerVersion.versionCode}-${managerUAPIVersion})",
                 deviceModel = resolveDeviceName(),
-                fingerprint = Build.FINGERPRINT,
                 selinuxStatus = getSELinuxStatusRaw(),
                 seccompStatus = runCatching {
                     Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0)

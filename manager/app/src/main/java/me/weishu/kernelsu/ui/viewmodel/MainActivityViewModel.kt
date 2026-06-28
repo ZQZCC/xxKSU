@@ -47,9 +47,6 @@ class MainActivityViewModel(
         return MainActivityUiState(
             appSettings = ThemeController.getAppSettings(ksuApp),
             pageScale = settingRepo.pageScale,
-            enableBlur = settingRepo.enableBlur,
-            enableFloatingBottomBar = settingRepo.enableFloatingBottomBar,
-            enableFloatingBottomBarBlur = settingRepo.enableFloatingBottomBarBlur,
             uiMode = UiMode.fromValue(settingRepo.uiMode),
         )
     }
@@ -61,9 +58,6 @@ class MainActivityViewModel(
             "color_style",
             "color_spec",
             "page_scale",
-            "enable_blur",
-            "enable_floating_bottom_bar",
-            "enable_floating_bottom_bar_blur",
             "ui_mode",
         )
     }
