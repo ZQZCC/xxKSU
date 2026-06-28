@@ -1,0 +1,159 @@
+name: Build KaSU Manager
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - dev
+      - ci
+      - test
+      - staging
+    paths:
+      - ".github/workflows/build-kasu-manager.yml"
+      - ".github/scripts/setup-rust-build.sh"
+      - "manager/**"
+      - "userspace/ksud/**"
+      - "userspace/ksuinit/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  pull_request:
+    branches:
+      - master
+      - main
+      - dev
+    paths:
+      - ".github/workflows/build-kasu-manager.yml"
+      - ".github/scripts/setup-rust-build.sh"
+      - "manager/**"
+      - "userspace/ksud/**"
+      - "userspace/ksuinit/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  ANDROID_API_LEVEL: 26
+  KASU_ABI: arm64-v8a
+  KASU_TARGET: aarch64-linux-android
+
+jobs:
+  build:
+    name: Build arm64 manager from source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r29
+
+      - name: Export Android NDK path
+        run: |
+          {
+            echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}"
+            echo "ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Setup rustup
+        run: |
+          rustup update stable
+          rustup target add "${KASU_TARGET}"
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: userspace/ksud
+          cache-targets: false
+
+      - name: Build and stage ksud
+        run: |
+          test -d "${ANDROID_NDK_HOME}"
+          source .github/scripts/setup-rust-build.sh "${KASU_TARGET}" "${ANDROID_API_LEVEL}"
+          cargo build --target "${TRIPLE}" --release --manifest-path ./userspace/ksud/Cargo.toml
+
+          KSUD_PATH="target/${KASU_TARGET}/release/ksud"
+          STRIP="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+          "${STRIP}" --strip-all "${KSUD_PATH}"
+
+          mkdir -p "manager/app/src/main/jniLibs/${KASU_ABI}"
+          cp -f "${KSUD_PATH}" "manager/app/src/main/jniLibs/${KASU_ABI}/libksud.so"
+          chmod 755 "manager/app/src/main/jniLibs/${KASU_ABI}/libksud.so"
+          ls -lh "manager/app/src/main/jniLibs/${KASU_ABI}/libksud.so"
+
+      - name: Write signing config
+        working-directory: manager
+        run: |
+          {
+            echo KEYSTORE_PASSWORD='password'
+            echo KEY_ALIAS='alias'
+            echo KEY_PASSWORD='password'
+            echo KEYSTORE_FILE='dummy.keystore'
+          } >> gradle.properties
+
+      - name: Build release APK
+        working-directory: manager
+        run: ./gradlew clean :app:assembleRelease --stacktrace
+
+      - name: Collect outputs
+        run: |
+          mkdir -p "dist/apk" "dist/native-libs/${KASU_ABI}"
+
+          APK="$(find manager/app/build/outputs/apk/release -type f -name '*.apk' | head -n 1)"
+          test -n "${APK}"
+          cp -f "${APK}" dist/apk/
+
+          cp -f "manager/app/src/main/jniLibs/${KASU_ABI}/libksud.so" "dist/native-libs/${KASU_ABI}/libksud.so"
+          cp -f "$(find manager/app/build/intermediates/cxx/Release -path "*/obj/${KASU_ABI}/libkernelsu.so" | head -n 1)" "dist/native-libs/${KASU_ABI}/libkernelsu.so"
+          cp -f "$(find manager/app/build/intermediates/cxx/Release -path "*/obj/${KASU_ABI}/libadbroot.so" | head -n 1)" "dist/native-libs/${KASU_ABI}/libadbroot.so"
+
+          unzip -l "${APK}" | tee dist/apk-contents.txt
+          grep -q "lib/${KASU_ABI}/libksud.so" dist/apk-contents.txt
+          grep -q "lib/${KASU_ABI}/libkernelsu.so" dist/apk-contents.txt
+          grep -q "lib/${KASU_ABI}/libadbroot.so" dist/apk-contents.txt
+          ! grep -E "lib/(armeabi-v7a|x86|x86_64)/" dist/apk-contents.txt
+
+          sha256sum dist/apk/*.apk dist/native-libs/${KASU_ABI}/*.so | tee dist/SHA256SUMS
+
+      - name: Verify APK signature
+        run: |
+          APK="$(find dist/apk -type f -name '*.apk' | head -n 1)"
+          APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "${APKSIGNER}"
+          "${APKSIGNER}" verify --verbose "${APK}"
+
+      - name: Upload manager APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: kasu-manager-apk
+          path: |
+            dist/apk/*.apk
+            dist/SHA256SUMS
+            dist/apk-contents.txt
+
+      - name: Upload native libs
+        uses: actions/upload-artifact@v7
+        with:
+          name: kasu-native-libs-arm64
+          path: |
+            dist/native-libs/arm64-v8a/*.so
+            dist/SHA256SUMS
