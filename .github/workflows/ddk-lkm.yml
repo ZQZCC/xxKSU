@@ -58,6 +58,13 @@ jobs:
         if [ -n "$EXPECTED_SIZE2" ]; then
           EXTRA_ARGS="KSU_EXPECTED_SIZE2=$EXPECTED_SIZE2 KSU_EXPECTED_HASH2=$EXPECTED_HASH2"
         fi
+
+        # SM8750-only tuning for the 6.6/4K LKM; keep other KMIs and built-in builds generic.
+        if [ "${{ inputs.kmi }}" = "android15-6.6" ]; then
+          grep -q '^CONFIG_ARM64_4K_PAGES=y$' "$KDIR/.config"
+          export KCFLAGS="${KCFLAGS:+$KCFLAGS }-O2 -march=armv8-a+crc+lse+rcpc+flagm -mgeneral-regs-only -mno-outline-atomics"
+          echo "=== SM8750 LKM flags: $KCFLAGS ==="
+        fi
         CONFIG_KSU=m CC=clang make $EXTRA_ARGS
         
         echo "=== Build completed ==="
