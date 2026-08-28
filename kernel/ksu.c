@@ -51,6 +51,7 @@
 #include "manager/apk_sign.h"
 #include "manager/manager_identity.h"
 #include "manager/throne_tracker.h"
+#include "supercall/capfd.h"
 #include "supercall/internal.h"
 #include "supercall/supercall.h"
 #include "infra/su_mount_ns.h"
@@ -99,6 +100,9 @@
 #include "manager/throne_tracker.c"
 
 #include "supercall/perm.c"
+#ifdef CONFIG_KSU_CAPFD_ROOT
+#include "supercall/capfd.c"
+#endif
 #include "supercall/dispatch.c"
 #include "supercall/supercall.c"
 
@@ -204,8 +208,13 @@
 #else
 	#define FEAT_9 ""
 #endif
+#if defined(CONFIG_KSU_CAPFD_ROOT)
+	#define FEAT_10 " +capfd_root"
+#else
+	#define FEAT_10 ""
+#endif
 
-#define EXTRA_FEATURES FEAT_1 FEAT_2 FEAT_3 FEAT_4 FEAT_5 FEAT_6 FEAT_7 FEAT_8 FEAT_9
+#define EXTRA_FEATURES (FEAT_1 FEAT_2 FEAT_3 FEAT_4 FEAT_5 FEAT_6 FEAT_7 FEAT_8 FEAT_9 FEAT_10)
 
 static int __init kernelsu_init(void)
 {

@@ -23,3 +23,10 @@ bool allowed_for_su(void)
 	return is_manager() || ksu_is_allow_uid_for_current(current_uid().val);
 
 }
+
+#ifdef CONFIG_KSU_CAPFD_ROOT
+bool capfd_issuer_allowed(void)
+{
+	return uid_eq(current_euid(), GLOBAL_ROOT_UID) && is_ksu_domain();
+}
+#endif

@@ -6,6 +6,9 @@ bool only_root(void);
 bool manager_or_root(void);
 bool always_allow(void);
 bool allowed_for_su(void);
+#ifdef CONFIG_KSU_CAPFD_ROOT
+bool capfd_issuer_allowed(void);
+#endif
 
 long ksu_supercall_handle_ioctl(unsigned int cmd, void __user *argp);
 void ksu_supercall_dump_commands(void);

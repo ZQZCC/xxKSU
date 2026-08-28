@@ -4,7 +4,7 @@ static struct group_info root_groups = { .usage = REFCOUNT_INIT(2) };
 static struct group_info root_groups = { .usage = ATOMIC_INIT(2) };
 #endif
 
-static void setup_groups(struct root_profile *profile, struct cred *cred)
+static void setup_groups(const struct root_profile *profile, struct cred *cred)
 {
 	if (profile->groups_count > KSU_MAX_GROUPS) {
 		pr_warn("Failed to setgroups, too large group: %d!\n",
@@ -71,11 +71,13 @@ static void disable_seccomp(void)
 	spin_unlock_irq(&current->sighand->siglock);
 }
 
-static int escape_to_root(bool is_forced)
+static int escape_to_root(bool is_forced,
+			  const struct root_profile *profile_snapshot)
 {
 	int ret = 0;
 	struct cred *cred;
-	struct root_profile *profile = NULL;
+	struct root_profile *profile_ref = NULL;
+	const struct root_profile *profile = profile_snapshot;
 	struct user_struct *new_user;
 
 	cred = prepare_creds();
@@ -94,7 +96,10 @@ static int escape_to_root(bool is_forced)
 		goto out_abort_creds;
 	}
 
-	profile = ksu_get_root_profile(ksu_get_uid_t(cred->uid));
+	if (!profile) {
+		profile_ref = ksu_get_root_profile(ksu_get_uid_t(cred->uid));
+		profile = profile_ref;
+	}
 
 	ksu_get_uid_t(cred->uid) = profile->uid;
 	ksu_get_uid_t(cred->suid) = profile->uid;
@@ -155,27 +160,42 @@ static int escape_to_root(bool is_forced)
 	}
 	
 	setup_mount_ns(profile->namespaces);
-	ksu_put_root_profile(profile);
+	if (profile_ref)
+		ksu_put_root_profile(profile_ref);
 	return 0;
 
 out_abort_creds:
-	if (profile)
-		ksu_put_root_profile(profile);
+	if (profile_ref)
+		ksu_put_root_profile(profile_ref);
 	abort_creds(cred);
 	return ret;
 }
 
 int escape_with_root_profile(void)
 {
-	return escape_to_root(false);
+	return escape_to_root(false, NULL);
 }
+
+#ifdef CONFIG_KSU_CAPFD_ROOT
+int escape_with_root_profile_snapshot(const struct root_profile *profile)
+{
+	if (!profile)
+		return -EINVAL;
+	if (uid_eq(current_euid(), GLOBAL_ROOT_UID))
+		return -EALREADY;
+	if (test_thread_flag(TIF_KSU_DISABLE_ESCAPE_WITH_ROOT))
+		return -EPERM;
+
+	return escape_to_root(false, profile);
+}
+#endif
 
 void escape_to_root_forced(void)
 {
 	// I'm not really sure which permissions are needed
 	// its just escape to root but bypasses cred check
 	// which we likely already have on contexts where this will be used.
-	escape_to_root(true);
+	escape_to_root(true, NULL);
 }
 
 void __init ksu_app_profile_init(void) { }

@@ -61,6 +61,17 @@ config KSU_TINYFS_SUCOMPAT
 	  launcher. This implementation targets fixed ARM64 6.1 built-in kernels and is
 	  intentionally not a generic LKM compatibility layer.
 
+config KSU_CAPFD_ROOT
+	bool "Experimental one-shot root capability FD for ARM64 6.1"
+	depends on KSU = y
+	depends on ARM64
+	default n
+	help
+	  Allow a trusted KernelSU root process to issue a process-bound,
+	  single-use capability FD. This is an experimental built-in-kernel
+	  interface intended for the TinyFS su launcher flow. The FD is bound
+	  to one task address space and can only be consumed once.
+
 config KSU_LSM_SECURITY_HOOKS
 	bool "Use LSM security hooks"
 	depends on KSU

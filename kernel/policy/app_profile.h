@@ -15,6 +15,9 @@
 
 // Escalate current process to root with the appropriate profile
 int escape_with_root_profile(void);
+#ifdef CONFIG_KSU_CAPFD_ROOT
+int escape_with_root_profile_snapshot(const struct root_profile *profile);
+#endif
 
 void escape_to_root_forced(void);
 

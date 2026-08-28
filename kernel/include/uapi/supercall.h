@@ -139,6 +139,11 @@ struct ksu_get_sulog_fd_cmd {
 	__u32 flags; /* Input: reserved for future use, must be 0 */
 };
 
+struct ksu_create_root_capfd_cmd {
+	__s32 target_pidfd; /* Input: pidfd for the process that may consume the FD */
+	__u32 flags; /* Input: reserved for future use, must be 0 */
+};
+
 #define KSU_UMOUNT_WIPE 0	// ignore everything and wipe list
 #define KSU_UMOUNT_ADD 1	// add entry (path + flags)
 #define KSU_UMOUNT_DEL 2	// delete entry, strcmp
@@ -170,5 +175,8 @@ struct ksu_get_sulog_fd_cmd {
 #define KSU_IOCTL_SET_INIT_PGRP _IO('K', 19)
 #define KSU_IOCTL_GET_SULOG_FD _IOW('K', 20, struct ksu_get_sulog_fd_cmd)
 #define KSU_IOCTL_DISABLE_ESCAPE_TO_ROOT _IO('K', 21)
+#define KSU_IOCTL_CREATE_ROOT_CAPFD _IOW('K', 22, struct ksu_create_root_capfd_cmd)
+
+#define KSU_CAPFD_IOCTL_ENTER_ROOT _IO('C', 1)
 
 #endif
