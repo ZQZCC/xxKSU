@@ -182,7 +182,11 @@ void ksu_tinyfs_sucompat_init(void)
 		ksu_tinyfs_su_inode = NULL;
 		goto out_path;
 	}
+	spin_lock(&security->lock);
 	security->sid = ksu_file_sid;
+	security->sclass = SECCLASS_FILE;
+	security->initialized = LABEL_INITIALIZED;
+	spin_unlock(&security->lock);
 
 	ksu_tinyfs_bin_iops = *ksu_tinyfs_orig_bin_iops;
 	ksu_tinyfs_bin_iops.lookup = ksu_tinyfs_lookup;
