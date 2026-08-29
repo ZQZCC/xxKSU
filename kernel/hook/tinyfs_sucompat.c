@@ -97,16 +97,8 @@ static const struct address_space_operations ksu_tinyfs_aops = {
 	.read_folio = ksu_tinyfs_read_folio,
 };
 
-static ssize_t ksu_tinyfs_read(struct file *file, char __user *buffer,
-			       size_t length, loff_t *offset)
-{
-	return simple_read_from_buffer(buffer, length, offset,
-				       ksu_tinysu_arm64,
-				       sizeof(ksu_tinysu_arm64));
-}
-
 static const struct file_operations ksu_tinyfs_fops = {
-	.read = ksu_tinyfs_read,
+	.read_iter = generic_file_read_iter,
 	.llseek = generic_file_llseek,
 	.mmap = generic_file_readonly_mmap,
 };
