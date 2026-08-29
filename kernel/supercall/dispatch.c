@@ -28,6 +28,10 @@ static int do_get_info(void __user *arg)
 	cmd.flags |= KSU_GET_INFO_FLAG_LKM;
 #endif
 
+#ifdef CONFIG_KSU_CAPFD_ROOT
+	cmd.flags |= KSU_GET_INFO_FLAG_CAPFD_ROOT;
+#endif
+
 	if (is_manager()) {
 		cmd.flags |= KSU_GET_INFO_FLAG_MANAGER;
 	}
@@ -51,6 +55,10 @@ static int do_get_info(void __user *arg)
 static int do_get_info_legacy(void __user *arg)
 {
 	struct ksu_get_info_legacy_cmd cmd = { .version = KERNEL_SU_VERSION, .flags = 0 };
+
+#ifdef CONFIG_KSU_CAPFD_ROOT
+	cmd.flags |= KSU_GET_INFO_FLAG_CAPFD_ROOT;
+#endif
 
 	if (is_manager()) {
 		cmd.flags |= KSU_GET_INFO_FLAG_MANAGER;

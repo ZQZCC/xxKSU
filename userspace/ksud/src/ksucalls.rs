@@ -91,6 +91,10 @@ pub fn is_lkm() -> bool {
     get_info().flags & ksu_uapi::KSU_GET_INFO_FLAG_LKM != 0
 }
 
+pub fn supports_capfd_root() -> bool {
+    get_info().flags & ksu_uapi::KSU_GET_INFO_FLAG_CAPFD_ROOT != 0
+}
+
 pub const fn uapi_version() -> u32 {
     ksu_uapi::KERNEL_SU_UAPI_VERSION
 }
@@ -119,6 +123,14 @@ pub fn ensure_uapi_version_matched() -> anyhow::Result<()> {
 pub fn grant_root() -> std::io::Result<()> {
     ksuctl(ksu_uapi::KSU_IOCTL_GRANT_ROOT, std::ptr::null_mut::<u8>())?;
     Ok(())
+}
+
+pub fn create_root_capfd(target_pidfd: RawFd) -> std::io::Result<RawFd> {
+    let mut cmd = ksu_uapi::ksu_create_root_capfd_cmd {
+        target_pidfd,
+        flags: 0,
+    };
+    ksuctl(ksu_uapi::KSU_IOCTL_CREATE_ROOT_CAPFD, &raw mut cmd)
 }
 
 fn report_event(event: u32) {

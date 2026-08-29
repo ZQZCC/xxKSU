@@ -9,8 +9,8 @@ use crate::boot_patch::{BootPatchArgs, BootRestoreArgs};
 use crate::lkm_image::BootPatchV2Args;
 use crate::module::regenerate_preinit_rc;
 use crate::{
-    apk_sign, assets, debug, defs, init_event, ksu_uapi, ksucalls, module, module_config, sulog,
-    utils,
+    apk_sign, assets, debug, defs, fdroot, init_event, ksu_uapi, ksucalls, module, module_config,
+    sulog, utils,
 };
 
 /// KernelSU userspace cli
@@ -38,6 +38,10 @@ enum Commands {
     /// Run sulog reader daemon. Not for user. Use `ksud debug sulogd` to launch daemon.
     #[command(hide = true)]
     Sulogd,
+
+    /// Run the TinyFS CapFD broker. Not for direct use.
+    #[command(hide = true)]
+    FdRootServer,
 
     /// Trigger `boot-complete` event
     BootCompleted,
@@ -666,6 +670,7 @@ pub fn run() -> Result<()> {
             Ok(())
         }
         Commands::Sulogd => sulog::run_sulogd(),
+        Commands::FdRootServer => fdroot::run_server(),
         Commands::Profile { command } => match command {
             Profile::GetSepolicy { package } => crate::profile::get_sepolicy(package),
             Profile::SetSepolicy { package, policy } => {

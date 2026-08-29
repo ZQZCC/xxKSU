@@ -52,6 +52,7 @@ config KSU_TINYFS_SUCOMPAT
 	bool "Experimental TinyFS sucompat for fixed ARM64 6.1 kernels"
 	depends on KSU = y
 	depends on ARM64
+	select KSU_CAPFD_ROOT
 	depends on !KSU_TAMPER_SYSCALL_TABLE
 	depends on !KSU_HACK_ARM64_BRANCH_LINK
 	depends on !KSU_FEATURE_ADBROOT

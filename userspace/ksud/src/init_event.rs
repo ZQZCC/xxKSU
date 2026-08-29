@@ -21,6 +21,10 @@ pub fn on_post_data_fs() -> Result<()> {
 
     ksucalls::report_post_fs_data();
 
+    if let Err(err) = crate::fdroot::ensure_server_running() {
+        warn!("failed to start fd-root broker: {err:#}");
+    }
+
     utils::umask(0);
 
     // Clear all temporary module configs early

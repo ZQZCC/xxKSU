@@ -21,6 +21,8 @@ mod cli_non_android;
 mod debug;
 mod defs;
 #[cfg(target_os = "android")]
+mod fdroot;
+#[cfg(target_os = "android")]
 mod feature;
 #[cfg(target_os = "android")]
 mod init_event;
